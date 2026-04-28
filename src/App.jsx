@@ -1,4 +1,5 @@
 import { useState, useEffect, createContext, useContext } from "react";
+import * as DB from "./supabase.js";
 
 // ─── USUARIOS ─────────────────────────────────────────────────────────────────
 const USERS_INIT = {
@@ -53,6 +54,10 @@ const COMUNICADOS_INIT = [
   { id:3, fecha:"28 Mar 2026", autorKey:"mrobles", titulo:"Fondo de Beneficencia — 1er Trimestre", cuerpo:"Se recuerda a los HH∴ la importancia de contribuir al Fondo de Beneficencia. Las contribuciones pueden realizarse en la próxima Tenida." },
 ];
 
+const ACTAS_INIT = [
+  { id:1, fecha:"17 Abr 2026", tenidaDesc:"Tenida de Instrucción — 17 de Abril 2026", autorKey:"egonzalez", texto:"En la ciudad de Merlo, siendo las 19:15 horas del 17 de Abril de 2026, y reunidos en el Oriente de la Resp∴ Log∴ Pedro Benoit N∴ 636, el Ven∴ Maes∴ Fernando Cruz declaró abiertos los trabajos en grado de Aprendiz.\n\nSe procedió a la lectura del Acta de la tenida anterior, la cual fue aprobada por unanimidad. El Sec∴ Elbio González informó sobre las comunicaciones recibidas de la Gran Logia.\n\nSe realizó instrucción masónica sobre el simbolismo de la columna del Norte. El H∴ Gastón Paz presentó una breve reflexión sobre los principios fundamentales del grado de Aprendiz.\n\nNo habiendo más asuntos que tratar, el Ven∴ Maes∴ declaró cerrados los trabajos a las 21:30 horas, procediéndose al Ágape fraternal." },
+];
+
 const OFICIALIDADES = ["","Venerable Maestro","Primer Vigilante","Segundo Vigilante","Orador","Secretario","Tesorero","Limosnero","Maestro de Ceremonias","Primer Experto","Segundo Experto","Primer Diácono","Segundo Diácono","Hospitalario","Porta Espada","Porta Estandarte","Guardián Exterior","Guardián Interior","Hermano"];
 
 // ─── TEMAS ────────────────────────────────────────────────────────────────────
@@ -87,7 +92,7 @@ const useT = () => useContext(TemaCtx);
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 const DIAS = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
-const GICON = { "Maestro":"✦✦✦", "Compañero":"✦✦", "Aprendiz":"✦" };
+const GICON = { "Maestro":"M∴", "Compañero":"C∴", "Aprendiz":"A∴" };
 const GORD = { "Aprendiz":1, "Compañero":2, "Maestro":3 };
 const FF = "'Segoe UI','Helvetica Neue',Arial,sans-serif";
 
@@ -107,6 +112,46 @@ function fCorto(f) { if(!f) return ""; return new Date(f+"T12:00:00").toLocaleDa
 function calcEdad(fn) { if(!fn) return null; const h=new Date(),n=new Date(fn+"T12:00:00"); let e=h.getFullYear()-n.getFullYear(); if(h.getMonth()-n.getMonth()<0||(h.getMonth()===n.getMonth()&&h.getDate()<n.getDate())) e--; return e; }
 
 // ─── ATOMS ────────────────────────────────────────────────────────────────────
+function MasonicAvatar({ grado, size }) {
+  const T = useT();
+  const gc = T.GRADO[grado] || T.acento;
+  const sz = size || 46;
+  // Masonic symbols as SVG for each degree
+  const symbols = {
+    "Maestro": (
+      <svg viewBox="0 0 40 40" width={sz} height={sz}>
+        <circle cx="20" cy="20" r="19" fill={T.acentoBg} stroke={gc} strokeWidth="2"/>
+        {/* Square and compass */}
+        <path d="M10 28 L10 16 L24 28" stroke={gc} strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+        <line x1="20" y1="12" x2="13" y2="26" stroke={gc} strokeWidth="2" strokeLinecap="round"/>
+        <line x1="20" y1="12" x2="27" y2="26" stroke={gc} strokeWidth="2" strokeLinecap="round"/>
+        <path d="M14.5 23.5 Q20 28 25.5 23.5" stroke={gc} strokeWidth="1.5" fill="none"/>
+        <text x="20" y="21" textAnchor="middle" dominantBaseline="middle" fill={gc} fontSize="7" fontFamily="serif" fontWeight="bold">G</text>
+      </svg>
+    ),
+    "Compañero": (
+      <svg viewBox="0 0 40 40" width={sz} height={sz}>
+        <circle cx="20" cy="20" r="19" fill={T.acentoBg} stroke={gc} strokeWidth="2"/>
+        {/* Plumb and level */}
+        <line x1="20" y1="10" x2="20" y2="30" stroke={gc} strokeWidth="2" strokeLinecap="round"/>
+        <line x1="12" y1="24" x2="28" y2="24" stroke={gc} strokeWidth="2" strokeLinecap="round"/>
+        <circle cx="20" cy="30" r="2" fill={gc}/>
+        <text x="20" y="18" textAnchor="middle" dominantBaseline="middle" fill={gc} fontSize="6" fontFamily="serif">C∴</text>
+      </svg>
+    ),
+    "Aprendiz": (
+      <svg viewBox="0 0 40 40" width={sz} height={sz}>
+        <circle cx="20" cy="20" r="19" fill={T.acentoBg} stroke={gc} strokeWidth="2"/>
+        {/* Rough ashlar / trowel */}
+        <rect x="13" y="14" width="14" height="12" rx="2" stroke={gc} strokeWidth="2" fill="none"/>
+        <line x1="20" y1="26" x2="20" y2="30" stroke={gc} strokeWidth="2" strokeLinecap="round"/>
+        <text x="20" y="20" textAnchor="middle" dominantBaseline="middle" fill={gc} fontSize="6" fontFamily="serif">A∴</text>
+      </svg>
+    ),
+  };
+  return symbols[grado] || symbols["Aprendiz"];
+}
+
 function EyeIcon({ size, color }) {
   const T = useT(); const c = color || T.acento; const w = (size||40)*1.65; const h = size||40;
   return (
@@ -194,8 +239,9 @@ function Notif({ msg, cerrar }) {
   return <div style={{position:"fixed",top:20,right:20,zIndex:9999,background:T.bgCard,border:`2px solid ${T.acento}`,color:T.acento,padding:"14px 24px",borderRadius:10,fontSize:16,fontWeight:700,fontFamily:FF,boxShadow:"0 8px 32px rgba(0,0,0,0.4)",animation:"pbFI 0.3s ease"}}>{msg}</div>;
 }
 
-function BtnConfirmar({ activo, onClick, label, labelActivo, secundario }) {
-  const T = useT(); const [hover, setHover] = useState(false); const c = secundario ? T.cyan : T.acento;
+function BtnConfirmar({ activo, onClick, label, labelActivo, secundario, peligro }) {
+  const T = useT(); const [hover, setHover] = useState(false);
+  const c = peligro ? T.peligro : secundario ? T.cyan : T.acento;
   return <button onClick={onClick} onMouseEnter={()=>setHover(true)} onMouseLeave={()=>setHover(false)} style={{padding:"10px 20px",background:activo?`${c}22`:hover?`${c}0d`:"transparent",border:`2px solid ${activo?c:hover?`${c}88`:T.border}`,borderRadius:8,color:activo?c:hover?c:T.textoSec,fontSize:15,fontWeight:700,fontFamily:FF,cursor:"pointer",transition:"all 0.18s"}}>{activo?labelActivo:label}</button>;
 }
 
@@ -205,26 +251,41 @@ function Dos({ children }) { return <div style={{display:"grid",gridTemplateColu
 export default function App() {
   const [oscuro, setOscuro] = useState(true);
   const T = oscuro ? TEMAS.oscuro : TEMAS.claro;
-
   const [pantalla, setPantalla] = useState("login");
   const [cu, setCu] = useState(null);
   const [usuarios, setUsuarios] = useState(USERS_INIT);
   const [planchas, setPlanchas] = useState(PLANCHAS_INIT);
   const [tenidas, setTenidas] = useState(TENIDAS_INIT);
   const [comunicados, setComunicados] = useState(COMUNICADOS_INIT);
+  const [actas, setActas] = useState(ACTAS_INIT);
   const [confs, setConfs] = useState({});
-  const [tab, setTab] = useState("calendario");
+  const [tab, setTab] = useState("inicio");
   const [notif, setNotif] = useState(null);
-  const [lu, setLu] = useState("");
-  const [lp, setLp] = useState("");
-  const [lerr, setLerr] = useState("");
+  const [lu, setLu] = useState(""); const [lp, setLp] = useState(""); const [lerr, setLerr] = useState("");
+  const [cargando, setCargando] = useState(true);
+  const [dbOk, setDbOk] = useState(false);
 
-  useEffect(() => { if(cu) setCu(prev => ({...prev, ...usuarios[prev.key]})); }, [usuarios]);
-
+  useEffect(() => {
+    (async () => {
+      try {
+        const [u, t, c, a, p, cf] = await Promise.all([
+          DB.getUsuarios(), DB.getTenidas(), DB.getComunicados(),
+          DB.getActas(), DB.getPlanchas(), DB.getConfirmaciones()
+        ]);
+        if (Object.keys(u).length) setUsuarios(u);
+        if (t.length) setTenidas(t);
+        if (c.length) setComunicados(c);
+        setActas(a); setPlanchas(p); setConfs(cf);
+        setDbOk(true);
+      } catch(e) {
+        console.warn("Supabase no disponible:", e.message);
+      } finally { setCargando(false); }
+    })();
+  }, []);
   function ingresar() {
     const k = lu.trim().toLowerCase();
     const u = usuarios[k];
-    if (u && u.password === lp) { setCu({...u, key:k}); setPantalla("app"); setLerr(""); setTab("calendario"); }
+    if (u && u.password === lp) { setCu({...u, key:k}); setPantalla("app"); setLerr(""); setTab("inicio"); }
     else setLerr("Usuario o contraseña incorrectos.");
   }
   function salir() { setPantalla("login"); setCu(null); setLu(""); setLp(""); }
@@ -234,30 +295,104 @@ export default function App() {
     setConfs(prev => {
       const td = prev[tid] || {};
       const uc = td[cu.key] || {};
-      const nv = !uc[tipo];
-      msg(nv ? ("✓ " + (tipo==="asistencia"?"Asistencia":"Ágape") + " confirmado") : "Cancelado");
-      return {...prev, [tid]: {...td, [cu.key]: {...uc, [tipo]:nv}}};
+      let nu;
+      if (tipo === "noAsiste") {
+        const nv = uc.asistencia === false ? undefined : false;
+        nu = {...uc, asistencia: nv};
+        if (nv === undefined) delete nu.asistencia;
+        msg(nv === false ? "No asisto marcado" : "Cancelado");
+      } else {
+        const nv = !uc[tipo];
+        nu = {...uc, [tipo]: nv};
+        msg(nv ? "Confirmado" : "Cancelado");
+      }
+      if (dbOk) DB.upsertConfirmacion(tid, cu.key, nu).catch(console.error);
+      return {...prev, [tid]: {...td, [cu.key]: nu}};
     });
   }
   function miConf(tid) { return (confs[tid]||{})[cu?.key] || {}; }
 
-  function actualizarPerfil(key, perfil) { setUsuarios(p => ({...p,[key]:{...p[key],perfil}})); if(cu?.key===key) setCu(p=>({...p,perfil})); msg("✓ Perfil actualizado"); }
-  function actualizarMasonico(key, cambios) { setUsuarios(p => ({...p,[key]:{...p[key],...cambios}})); if(cu?.key===key) setCu(p=>({...p,...cambios})); msg("✓ Datos actualizados"); }
-  function agregarMiembro(key, datos) { setUsuarios(p => ({...p,[key]:datos})); msg("✓ Hermano registrado"); }
-  function eliminarMiembro(key) { setUsuarios(p => { const n={...p}; delete n[key]; return n; }); msg("Miembro eliminado"); }
-  function agregarPlancha(p) { const id=Math.max(...planchas.map(x=>x.id),0)+1; setPlanchas(prev=>[...prev,{...p,id,fecha:new Date().toISOString().slice(0,10)}]); msg("✓ Plancha publicada"); }
-  function eliminarPlancha(id) { setPlanchas(p=>p.filter(x=>x.id!==id)); msg("Plancha eliminada"); }
-  function agregarComunicado(c) {
-    const id = Math.max(...comunicados.map(x=>x.id),0)+1;
-    const fecha = new Date().toLocaleDateString("es-AR",{day:"numeric",month:"short",year:"numeric"});
-    setComunicados(p => [{...c,id,fecha}, ...p]);
+  function actualizarPerfil(key, perfil) {
+    const updated = {...(usuarios[key]||{}), perfil};
+    setUsuarios(p => ({...p, [key]: updated}));
+    if (cu?.key === key) setCu(p => ({...p, perfil}));
+    if (dbOk) DB.upsertUsuario(key, updated).catch(console.error);
+    msg("✓ Perfil actualizado");
+  }
+  function actualizarMasonico(key, cambios) {
+    const updated = {...(usuarios[key]||{}), ...cambios};
+    setUsuarios(p => ({...p, [key]: updated}));
+    if (cu?.key === key) setCu(p => ({...p, ...cambios}));
+    if (dbOk) DB.upsertUsuario(key, updated).catch(console.error);
+    msg("✓ Datos actualizados");
+  }
+  function agregarMiembro(key, datos) {
+    setUsuarios(p => ({...p, [key]: datos}));
+    if (dbOk) DB.upsertUsuario(key, datos).catch(console.error);
+    msg("✓ Hermano registrado");
+  }
+  function eliminarMiembro(key) {
+    setUsuarios(p => { const n = {...p}; delete n[key]; return n; });
+    if (dbOk) DB.deleteUsuario(key).catch(console.error);
+    msg("Miembro eliminado");
+  }
+  async function agregarPlancha(p) {
+    const fecha = new Date().toISOString().slice(0,10);
+    if (dbOk) {
+      try {
+        const r = await DB.insertPlancha({...p, fecha});
+        setPlanchas(prev => [...prev, r]);
+        msg("✓ Plancha publicada"); return;
+      } catch(e) { console.error(e); }
+    }
+    const id = Math.max(...planchas.map(x=>x.id), 0) + 1;
+    setPlanchas(prev => [...prev, {...p, id, fecha}]);
+    msg("✓ Plancha publicada");
+  }
+  function eliminarPlancha(id) {
+    setPlanchas(p => p.filter(x => x.id !== id));
+    if (dbOk) DB.deletePlancha(id).catch(console.error);
+    msg("Plancha eliminada");
+  }
+  async function agregarActa(a) {
+    const fecha = new Date().toLocaleDateString("es-AR", {day:"numeric",month:"short",year:"numeric"});
+    if (dbOk) {
+      try {
+        const r = await DB.insertActa({...a, fecha});
+        setActas(p => [r, ...p]);
+        msg("✓ Acta publicada"); return;
+      } catch(e) { console.error(e); }
+    }
+    const id = Math.max(...actas.map(x=>x.id), 0) + 1;
+    setActas(p => [{...a, id, fecha}, ...p]);
+    msg("✓ Acta publicada");
+  }
+  function eliminarActa(id) {
+    setActas(p => p.filter(a => a.id !== id));
+    if (dbOk) DB.deleteActa(id).catch(console.error);
+    msg("Acta eliminada");
+  }
+  async function agregarComunicado(c) {
+    const fecha = new Date().toLocaleDateString("es-AR", {day:"numeric",month:"short",year:"numeric"});
+    if (dbOk) {
+      try {
+        const r = await DB.insertComunicado({...c, fecha});
+        setComunicados(p => [r, ...p]);
+        msg("✓ Comunicado publicado"); return;
+      } catch(e) { console.error(e); }
+    }
+    const id = Math.max(...comunicados.map(x=>x.id), 0) + 1;
+    setComunicados(p => [{...c, id, fecha}, ...p]);
     msg("✓ Comunicado publicado");
   }
-  function eliminarComunicado(id) { setComunicados(p=>p.filter(c=>c.id!==id)); msg("Comunicado eliminado"); }
-
+  function eliminarComunicado(id) {
+    setComunicados(p => p.filter(c => c.id !== id));
+    if (dbOk) DB.deleteComunicado(id).catch(console.error);
+    msg("Comunicado eliminado");
+  }
   const esVM = cu?.esVM;
   const TABS = [
-    {id:"calendario",label:"Calendario"}, {id:"tenidas",label:"Tenidas"},
+    {id:"inicio",label:"Inicio"}, {id:"tenidas",label:"Tenidas"},
     {id:"planchas",label:"Planchas"}, {id:"hermanos",label:"Hermanos"},
     {id:"perfil",label:"Mi Perfil"}, {id:"comunicados",label:"Comunicados"},
     ...(esVM ? [{id:"vm",label:"Panel VM ✦"}] : []),
@@ -269,7 +404,14 @@ export default function App() {
         {notif && <Notif msg={notif} cerrar={()=>setNotif(null)}/>}
         <style>{`@keyframes pbFI{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}*{box-sizing:border-box;margin:0;padding:0}input::placeholder,textarea::placeholder{opacity:0.4}::-webkit-scrollbar{width:6px}::-webkit-scrollbar-thumb{background:${T.border};border-radius:3px}`}</style>
 
-        {pantalla==="login" && (
+        {cargando && (
+          <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:16,background:T.bg}}>
+            <div style={{fontSize:38,color:T.acento}}>✦</div>
+            <div style={{fontSize:16,color:T.textoSec,fontWeight:600,fontFamily:"'Segoe UI',Arial,sans-serif"}}>Cargando datos del Oriente...</div>
+            <div style={{fontSize:13,color:T.textoFaint,fontFamily:"'Segoe UI',Arial,sans-serif"}}>R∴L∴ Pedro Benoit N∴ 636 · Merlo</div>
+          </div>
+        )}
+        {!cargando && pantalla==="login" && (
           <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:24}}>
             <div style={{textAlign:"center",marginBottom:36}}>
               <EyeIcon size={44}/>
@@ -310,7 +452,7 @@ export default function App() {
           </div>
         )}
 
-        {pantalla==="app" && cu && (
+        {!cargando && pantalla==="app" && cu && (
           <div>
             <header style={{background:T.headerBg,borderBottom:`1.5px solid ${T.border}`,padding:"12px 24px",display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:200,backdropFilter:"blur(12px)"}}>
               <div style={{display:"flex",alignItems:"center",gap:14}}>
@@ -324,7 +466,7 @@ export default function App() {
                 <button onClick={()=>setOscuro(d=>!d)} title="Cambiar tema" style={{background:T.acentoBg,border:`1.5px solid ${T.acentoBorde}`,borderRadius:20,padding:"6px 14px",color:T.acento,fontSize:16,fontWeight:700,fontFamily:FF,cursor:"pointer"}}>{oscuro?"☀":"☽"}</button>
                 <div style={{textAlign:"right"}}>
                   <div style={{fontSize:15,color:T.texto,fontWeight:700}}>{nomCompleto(cu)}</div>
-                  <div style={{fontSize:13,color:T.GRADO[cu.grado]||T.acento,fontWeight:700}}>{GICON[cu.grado]} {cu.oficialidad||cu.cargo}</div>
+                  <div style={{fontSize:13,color:T.GRADO[cu.grado]||T.acento,fontWeight:700}}>{cu.grado[0]}∴ {cu.oficialidad||cu.cargo}</div>
                 </div>
                 <Boton onClick={salir} variante="fantasma" chico>Salir</Boton>
               </div>
@@ -337,13 +479,13 @@ export default function App() {
             </div>
 
             <div style={{maxWidth:920,margin:"0 auto",padding:"32px 24px 64px"}}>
-              {tab==="calendario" && <TabCalendario tenidas={tenidas} confs={confs} toggleConf={toggleConf} miConf={miConf}/>}
+              {tab==="inicio" && <TabCalendario tenidas={tenidas} confs={confs} toggleConf={toggleConf} miConf={miConf} actas={actas} cu={cu} onAgregarActa={agregarActa} onEliminarActa={eliminarActa}/>}
               {tab==="tenidas" && <TabTenidas tenidas={tenidas} confs={confs} toggleConf={toggleConf} miConf={miConf}/>}
               {tab==="planchas" && <TabPlanchas planchas={planchas} usuarios={usuarios} cu={cu} onAgregar={agregarPlancha} onEliminar={eliminarPlancha} esVM={esVM}/>}
               {tab==="hermanos" && <TabHermanos usuarios={usuarios} cu={cu}/>}
               {tab==="perfil" && <TabPerfil datosUser={usuarios[cu.key]} onGuardar={p=>actualizarPerfil(cu.key,p)}/>}
               {tab==="comunicados" && <TabComunicados comunicados={comunicados} cu={cu} usuarios={usuarios} onAgregar={agregarComunicado} onEliminar={eliminarComunicado}/>}
-              {tab==="vm" && esVM && <TabVM tenidas={tenidas} setTenidas={setTenidas} usuarios={usuarios} confs={confs} planchas={planchas} msg={msg} actualizarMasonico={actualizarMasonico} agregarMiembro={agregarMiembro} eliminarMiembro={eliminarMiembro} eliminarPlancha={eliminarPlancha}/>}
+              {tab==="vm" && esVM && <TabVM tenidas={tenidas} setTenidas={setTenidas} dbOk={dbOk} usuarios={usuarios} confs={confs} planchas={planchas} msg={msg} actualizarMasonico={actualizarMasonico} agregarMiembro={agregarMiembro} eliminarMiembro={eliminarMiembro} eliminarPlancha={eliminarPlancha}/>}
             </div>
             <div style={{textAlign:"center",paddingBottom:32,fontSize:14,color:T.textoFaint,letterSpacing:"0.2em"}}>A∴ L∴ G∴ D∴ G∴ A∴ D∴ U∴</div>
           </div>
@@ -354,7 +496,7 @@ export default function App() {
 }
 
 // ─── CALENDARIO ───────────────────────────────────────────────────────────────
-function TabCalendario({ tenidas, confs, toggleConf, miConf }) {
+function TabCalendario({ tenidas, confs, toggleConf, miConf, actas, cu, onAgregarActa, onEliminarActa }) {
   const T = useT();
   const hoy = new Date();
   const [anio, setAnio] = useState(hoy.getFullYear());
@@ -388,8 +530,9 @@ function TabCalendario({ tenidas, confs, toggleConf, miConf }) {
             {proxima.agape && <span style={{fontSize:15,fontWeight:600,color:confProxima.agape?T.cyan:T.textoFaint}}>{confProxima.agape?"✓ Ágape confirmado":"Sin confirmar ágape"}</span>}
           </div>
           <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
-            <BtnConfirmar activo={confProxima.asistencia} onClick={()=>toggleConf(proxima.id,"asistencia")} label="Confirmar asistencia" labelActivo="✓ Asistencia confirmada"/>
+            <BtnConfirmar activo={confProxima.asistencia===true} onClick={()=>toggleConf(proxima.id,"asistencia")} label="Confirmar asistencia" labelActivo="✓ Asistencia confirmada"/>
             {proxima.agape && <BtnConfirmar activo={confProxima.agape} onClick={()=>toggleConf(proxima.id,"agape")} label="+ Confirmar ágape" labelActivo="✓ Ágape confirmado" secundario/>}
+            <BtnConfirmar activo={confProxima.asistencia===false} onClick={()=>toggleConf(proxima.id,"noAsiste")} label="No asisto" labelActivo="✗ No voy" peligro/>
           </div>
         </div>
       )}
@@ -441,19 +584,112 @@ function TabCalendario({ tenidas, confs, toggleConf, miConf }) {
                   </div>
                 </div>
                 <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-                  <BtnConfirmar activo={conf.asistencia} onClick={()=>toggleConf(ten.id,"asistencia")} label="Confirmar asistencia" labelActivo="✓ Voy"/>
+                  <BtnConfirmar activo={conf.asistencia===true} onClick={()=>toggleConf(ten.id,"asistencia")} label="Confirmar asistencia" labelActivo="✓ Voy"/>
                   {ten.agape && <BtnConfirmar activo={conf.agape} onClick={()=>toggleConf(ten.id,"agape")} label="+ Ágape" labelActivo="✓ Me quedo al ágape" secundario/>}
+                  <BtnConfirmar activo={conf.asistencia===false} onClick={()=>toggleConf(ten.id,"noAsiste")} label="No asisto" labelActivo="✗ No voy" peligro/>
                 </div>
               </div>
             );
           })}
         </div>
       )}
+
+      {/* ─── ACTA DE LA TENIDA ANTERIOR ─── */}
+      <div style={{marginTop:32}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:10}}>
+          <SecTitulo>Acta de la Tenida Anterior</SecTitulo>
+          {cu && (cu.esVM || (cu.oficialidad||"").toLowerCase().includes("secretario")) && (
+            <ActaForm cu={cu} onAgregar={onAgregarActa}/>
+          )}
+        </div>
+        {actas && actas.length > 0 ? actas.slice(0,1).map(acta => (
+          <ActaCard key={acta.id} acta={acta} puedeEliminar={cu && (cu.esVM||(cu.oficialidad||"").toLowerCase().includes("secretario"))} onEliminar={onEliminarActa}/>
+        )) : (
+          <Tarjeta estilo={{textAlign:"center",color:"var(--ts, #89afd4)",fontSize:15,padding:"32px"}}>No hay actas publicadas aún.</Tarjeta>
+        )}
+        {actas && actas.length > 1 && (
+          <details style={{marginTop:10}}>
+            <summary style={{cursor:"pointer",fontSize:14,fontWeight:600,color:"#4da6ff",padding:"8px 0",userSelect:"none"}}>Ver actas anteriores ({actas.length-1} más)</summary>
+            {actas.slice(1).map(acta => (
+              <ActaCard key={acta.id} acta={acta} puedeEliminar={cu && (cu.esVM||(cu.oficialidad||"").toLowerCase().includes("secretario"))} onEliminar={onEliminarActa}/>
+            ))}
+          </details>
+        )}
+      </div>
     </div>
   );
 }
 
 // ─── TENIDAS ──────────────────────────────────────────────────────────────────
+function ActaCard({ acta, puedeEliminar, onEliminar }) {
+  const T = useT();
+  const [expandido, setExpandido] = useState(false);
+  const preview = acta.texto.length > 300 ? acta.texto.slice(0,300) + "..." : acta.texto;
+  return (
+    <Tarjeta estilo={{marginBottom:12,borderLeft:`4px solid ${T.textoSec}`}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10,flexWrap:"wrap",gap:8}}>
+        <div>
+          <div style={{fontSize:16,fontWeight:700,color:T.texto,marginBottom:3}}>{acta.tenidaDesc}</div>
+          <div style={{fontSize:13,color:T.textoSec,fontWeight:500}}>{acta.fecha}</div>
+        </div>
+        {puedeEliminar && (
+          <button onClick={()=>onEliminar(acta.id)}
+            style={{background:"none",border:`1.5px solid ${T.border}`,color:T.textoSec,padding:"4px 12px",borderRadius:6,cursor:"pointer",fontFamily:FF,fontSize:13,fontWeight:600,transition:"all 0.2s"}}
+            onMouseEnter={e=>{e.target.style.borderColor=T.peligro;e.target.style.color=T.peligro;}}
+            onMouseLeave={e=>{e.target.style.borderColor=T.border;e.target.style.color=T.textoSec;}}>
+            Eliminar
+          </button>
+        )}
+      </div>
+      <p style={{fontSize:15,color:T.textoSec,lineHeight:1.8,whiteSpace:"pre-wrap"}}>
+        {expandido ? acta.texto : preview}
+      </p>
+      {acta.texto.length > 300 && (
+        <button onClick={()=>setExpandido(!expandido)}
+          style={{background:"none",border:"none",color:T.acento,cursor:"pointer",fontFamily:FF,fontSize:14,fontWeight:600,marginTop:8,padding:0}}>
+          {expandido ? "Mostrar menos ↑" : "Leer acta completa ↓"}
+        </button>
+      )}
+    </Tarjeta>
+  );
+}
+
+function ActaForm({ cu, onAgregar }) {
+  const T = useT();
+  const [mostrar, setMostrar] = useState(false);
+  const [tenidaDesc, setTenidaDesc] = useState("");
+  const [texto, setTexto] = useState("");
+  function publicar() {
+    if(!tenidaDesc.trim()||!texto.trim()) return;
+    onAgregar({tenidaDesc, texto, autorKey:cu.key});
+    setTenidaDesc(""); setTexto(""); setMostrar(false);
+  }
+  return (
+    <div>
+      <Boton onClick={()=>setMostrar(!mostrar)} variante={mostrar?"fantasma":"primario"} chico>
+        {mostrar ? "Cancelar" : "+ Transcribir Acta"}
+      </Boton>
+      {mostrar && (
+        <Tarjeta estilo={{marginTop:14,marginBottom:4,border:`2px solid ${T.acentoBorde}`}}>
+          <div style={{fontSize:15,fontWeight:700,color:T.acento,textTransform:"uppercase",letterSpacing:"0.15em",marginBottom:14}}>Nueva Acta</div>
+          <Campo label="Descripción de la Tenida" value={tenidaDesc} onChange={setTenidaDesc} placeholder="Ej: Tenida de Instrucción — 17 de Abril 2026"/>
+          <label style={{display:"block",marginBottom:16}}>
+            <div style={{fontSize:14,fontWeight:600,color:T.textoSec,marginBottom:6}}>Texto del Acta</div>
+            <textarea value={texto} onChange={e=>setTexto(e.target.value)} rows={10}
+              placeholder="Transcribí o pegá el acta aquí..."
+              style={{width:"100%",padding:"12px 14px",background:T.bgInput,border:`2px solid ${T.border}`,borderRadius:8,color:T.texto,fontSize:15,fontFamily:FF,outline:"none",resize:"vertical",lineHeight:1.8,boxSizing:"border-box"}}
+              onFocus={e=>e.target.style.borderColor=T.acento} onBlur={e=>e.target.style.borderColor=T.border}/>
+          </label>
+          <div style={{display:"flex",gap:10}}>
+            <Boton onClick={publicar}>Publicar Acta</Boton>
+            <Boton onClick={()=>setMostrar(false)} variante="fantasma">Cancelar</Boton>
+          </div>
+        </Tarjeta>
+      )}
+    </div>
+  );
+}
+
 function TenidaCard({ tenida, pasada, conf, onToggle }) {
   const T = useT();
   return (
@@ -471,8 +707,9 @@ function TenidaCard({ tenida, pasada, conf, onToggle }) {
       <p style={{fontSize:15,color:T.textoSec,lineHeight:1.7,marginBottom:pasada?0:16}}>{tenida.descripcion}</p>
       {!pasada && (
         <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
-          <BtnConfirmar activo={conf.asistencia} onClick={()=>onToggle(tenida.id,"asistencia")} label="Confirmar asistencia" labelActivo="✓ Asistencia confirmada"/>
+          <BtnConfirmar activo={conf.asistencia===true} onClick={()=>onToggle(tenida.id,"asistencia")} label="Confirmar asistencia" labelActivo="✓ Asistencia confirmada"/>
           {tenida.agape && <BtnConfirmar activo={conf.agape} onClick={()=>onToggle(tenida.id,"agape")} label="Confirmar ágape" labelActivo="✓ Ágape confirmado" secundario/>}
+          <BtnConfirmar activo={conf.asistencia===false} onClick={()=>onToggle(tenida.id,"noAsiste")} label="No asisto" labelActivo="✗ No voy" peligro/>
         </div>
       )}
     </div>
@@ -570,7 +807,7 @@ function TabPlanchas({ planchas, usuarios, cu, onAgregar, onEliminar, esVM }) {
         return (
           <div key={g} style={{marginBottom:28}}>
             <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
-              <span style={{fontSize:16,color:GC[g],fontWeight:800}}>{GICON[g]}</span>
+              <span style={{fontSize:16,color:GC[g],fontWeight:800}}>{g==="Maestro"?"⬟":g==="Compañero"?"⬡":"○"}</span>
               <span style={{fontSize:14,fontWeight:700,color:GC[g],letterSpacing:"0.2em",textTransform:"uppercase"}}>Planchas de {g}</span>
               <div style={{flex:1,height:2,background:`linear-gradient(90deg,${GC[g]}50,transparent)`,borderRadius:2}}/>
             </div>
@@ -617,7 +854,7 @@ function TabHermanos({ usuarios, cu }) {
       <div>
         <button onClick={()=>setSeleccionado(null)} style={{background:"none",border:"none",color:T.textoSec,cursor:"pointer",fontFamily:FF,fontSize:15,fontWeight:600,marginBottom:20,padding:0}}>← Volver al Cuadro Lógico</button>
         <div style={{display:"flex",alignItems:"center",gap:18,marginBottom:28,flexWrap:"wrap"}}>
-          <div style={{width:68,height:68,borderRadius:"50%",border:`3px solid ${gc}`,display:"flex",alignItems:"center",justifyContent:"center",background:T.acentoBg,fontSize:24,color:gc,fontWeight:800}}>{GICON[u.grado]}</div>
+          <MasonicAvatar grado={u.grado} size={68}/>
           <div>
             <div style={{fontSize:22,fontWeight:800,color:T.texto,marginBottom:4}}>{nomCompleto(u)}</div>
             <div style={{fontSize:15,color:gc,fontWeight:700}}>{u.oficialidad||u.cargo} · {u.grado}</div>
@@ -663,7 +900,7 @@ function TabHermanos({ usuarios, cu }) {
               onMouseEnter={e=>{e.currentTarget.style.borderColor=T.acento;e.currentTarget.style.boxShadow=`0 4px 20px ${T.acento}25`;}}
               onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.boxShadow="none";}}>
               <div style={{display:"flex",alignItems:"center",gap:14}}>
-                <div style={{width:46,height:46,borderRadius:"50%",border:`2.5px solid ${gc}55`,display:"flex",alignItems:"center",justifyContent:"center",background:T.acentoBg,fontSize:18,color:gc,fontWeight:800,flexShrink:0}}>{GICON[u.grado]}</div>
+                <MasonicAvatar grado={u.grado} size={46}/>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{fontSize:15,fontWeight:700,color:T.texto,marginBottom:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{nomCompleto(u)}</div>
                   <div style={{fontSize:13,color:gc,fontWeight:600}}>{u.oficialidad||u.cargo}</div>
@@ -692,7 +929,7 @@ function TabPerfil({ datosUser, onGuardar }) {
     <div>
       <SecTitulo>Mi Perfil Masónico</SecTitulo>
       <div style={{display:"flex",alignItems:"center",gap:18,marginBottom:28,flexWrap:"wrap"}}>
-        <div style={{width:72,height:72,borderRadius:"50%",border:`3px solid ${gc}`,display:"flex",alignItems:"center",justifyContent:"center",background:T.acentoBg,fontSize:26,color:gc,fontWeight:800}}>{GICON[datosUser.grado]}</div>
+        <MasonicAvatar grado={datosUser.grado} size={72}/>
         <div>
           <div style={{fontSize:22,fontWeight:800,color:T.texto,marginBottom:4}}>{nomCompleto(datosUser)}</div>
           <div style={{fontSize:15,color:gc,fontWeight:700}}>{datosUser.oficialidad||datosUser.cargo} · {datosUser.grado}</div>
@@ -846,7 +1083,7 @@ function TabComunicados({ comunicados, cu, usuarios, onAgregar, onEliminar }) {
 }
 
 // ─── PANEL VM ─────────────────────────────────────────────────────────────────
-function TabVM({ tenidas, setTenidas, usuarios, confs, planchas, msg, actualizarMasonico, agregarMiembro, eliminarMiembro, eliminarPlancha }) {
+function TabVM({ tenidas, setTenidas, dbOk, usuarios, confs, planchas, msg, actualizarMasonico, agregarMiembro, eliminarMiembro, eliminarPlancha }) {
   const T = useT();
   const [subTab, setSubTab] = useState("asistentes");
   const ST = [{id:"asistentes",label:"Asistentes"},{id:"miembros",label:"Miembros"},{id:"tenidas",label:"Tenidas"},{id:"planchas",label:"Planchas"}];
@@ -866,7 +1103,7 @@ function TabVM({ tenidas, setTenidas, usuarios, confs, planchas, msg, actualizar
       </div>
       {subTab==="asistentes" && <VMAsistentes tenidas={tenidas} usuarios={usuarios} confs={confs}/>}
       {subTab==="miembros" && <VMMiembros usuarios={usuarios} actualizarMasonico={actualizarMasonico} agregarMiembro={agregarMiembro} eliminarMiembro={eliminarMiembro} msg={msg}/>}
-      {subTab==="tenidas" && <VMTenidas tenidas={tenidas} setTenidas={setTenidas} msg={msg}/>}
+      {subTab==="tenidas" && <VMTenidas tenidas={tenidas} setTenidas={setTenidas} dbOk={dbOk} msg={msg}/>}
       {subTab==="planchas" && <VMPlanchas planchas={planchas} usuarios={usuarios} eliminarPlancha={eliminarPlancha}/>}
     </div>
   );
@@ -1019,7 +1256,7 @@ function VMMiembros({ usuarios, actualizarMasonico, agregarMiembro, eliminarMiem
         return (
           <Tarjeta key={k} estilo={{marginBottom:12,border:editando?`2px solid ${T.acentoBorde}`:undefined}}>
             <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:editando?18:0}}>
-              <div style={{width:44,height:44,borderRadius:"50%",border:`2px solid ${gc}55`,display:"flex",alignItems:"center",justifyContent:"center",background:T.acentoBg,fontSize:16,color:gc,fontWeight:800,flexShrink:0}}>{GICON[u.grado]}</div>
+              <MasonicAvatar grado={u.grado} size={44}/>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontSize:16,fontWeight:700,color:T.texto}}>{nomCompleto(u)}</div>
                 <div style={{fontSize:13,color:gc,fontWeight:600}}>{u.oficialidad||u.cargo} · {u.grado}{u.esVM&&<span style={{color:T.acento,marginLeft:8}}>✦ VM</span>}</div>
@@ -1061,7 +1298,123 @@ function VMMiembros({ usuarios, actualizarMasonico, agregarMiembro, eliminarMiem
 }
 
 // ─── VM: TENIDAS ──────────────────────────────────────────────────────────────
-function VMTenidas({ tenidas, setTenidas, msg }) {
+function GenerarTenidasMasivo({ tenidas, setTenidas, msg }) {
+  const T = useT();
+  const [mostrar, setMostrar] = useState(false);
+  const [semanas, setSemanas] = useState([1,3]);  // 1=primer, 3=tercer viernes
+  const [hora, setHora] = useState("19:00");
+  const [tipo, setTipo] = useState("Tenida de Instrucción");
+  const [grado, setGrado] = useState("Aprendiz");
+  const [agape, setAgape] = useState(true);
+  const [mesesAdelante, setMesesAdelante] = useState(6);
+
+  const opSemanas = [{v:1,l:"1ros Viernes"},{v:2,l:"2dos Viernes"},{v:3,l:"3ros Viernes"},{v:4,l:"4tos Viernes"},{v:5,l:"5tos Viernes"}];
+
+  function toggleSemana(n) {
+    setSemanas(prev => prev.includes(n) ? prev.filter(x=>x!==n) : [...prev,n]);
+  }
+
+  function generarFechas() {
+    // Get all selected Fridays for the next N months
+    const hoy = new Date();
+    const fechas = [];
+    for (let m = 0; m < mesesAdelante; m++) {
+      const anio = hoy.getFullYear() + Math.floor((hoy.getMonth() + m) / 12);
+      const mes = (hoy.getMonth() + m) % 12;
+      // Get all Fridays in this month
+      const viernesDelMes = [];
+      const d = new Date(anio, mes, 1);
+      while (d.getDay() !== 5) d.setDate(d.getDate()+1); // first Friday
+      while (d.getMonth() === mes) {
+        viernesDelMes.push(new Date(d));
+        d.setDate(d.getDate()+7);
+      }
+      // Select by position (1st, 3rd, 5th = index 0,2,4)
+      semanas.forEach(s => {
+        const idx = s - 1;
+        if (viernesDelMes[idx]) {
+          const fecha = viernesDelMes[idx];
+          if (fecha >= hoy) {
+            const str = fecha.toISOString().slice(0,10);
+            fechas.push(str);
+          }
+        }
+      });
+    }
+    return [...new Set(fechas)].sort();
+  }
+
+  async function generar() {
+    if (semanas.length === 0) { msg("Seleccioná al menos un viernes"); return; }
+    const fechas = generarFechas();
+    if (fechas.length === 0) { msg("No hay fechas futuras para generar"); return; }
+    const idMax = Math.max(...tenidas.map(t=>t.id), 0);
+    const nuevas = fechas.map((fecha, i) => ({
+      id: idMax + i + 1,
+      fecha,
+      hora,
+      tipo,
+      grado,
+      agape,
+      descripcion: `${opSemanas.find(x=>x.v===semanas[semanas.indexOf(semanas[i%semanas.length])])?.l||"Viernes"} — ${tipo}.`
+    }));
+    // Filter out already existing dates
+    const existentes = new Set(tenidas.map(t=>t.fecha));
+    const sinDuplicados = nuevas.filter(t => !existentes.has(t.fecha));
+    if (sinDuplicados.length === 0) { msg("Todas esas fechas ya existen"); return; }
+    setTenidas(prev => [...prev, ...sinDuplicados].sort((a,b)=>a.fecha.localeCompare(b.fecha)));
+    msg("✓ " + sinDuplicados.length + " tenidas generadas");
+    setMostrar(false);
+  }
+
+  return (
+    <div style={{marginBottom:16}}>
+      <Boton onClick={()=>setMostrar(!mostrar)} variante={mostrar?"fantasma":"primario"} chico>
+        {mostrar ? "Cancelar" : "⚙ Generar Tenidas Masivamente"}
+      </Boton>
+      {mostrar && (
+        <Tarjeta estilo={{marginTop:14,border:`2px solid ${T.acentoBorde}`}}>
+          <div style={{fontSize:15,fontWeight:700,color:T.acento,textTransform:"uppercase",letterSpacing:"0.15em",marginBottom:18}}>Generador Masivo de Tenidas</div>
+
+          <div style={{marginBottom:16}}>
+            <div style={{fontSize:14,fontWeight:600,color:T.textoSec,marginBottom:10}}>¿Qué viernes del mes?</div>
+            <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+              {opSemanas.map(op => (
+                <button key={op.v} onClick={()=>toggleSemana(op.v)}
+                  style={{padding:"8px 16px",borderRadius:8,border:`2px solid ${semanas.includes(op.v)?T.acento:T.border}`,background:semanas.includes(op.v)?T.acentoBg:"transparent",color:semanas.includes(op.v)?T.acento:T.textoSec,fontFamily:FF,fontSize:14,fontWeight:700,cursor:"pointer",transition:"all 0.2s"}}>
+                  {op.l}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0 16px"}}>
+            <Campo label="Hora" type="time" value={hora} onChange={setHora}/>
+            <Selector label="Meses a generar" value={String(mesesAdelante)} onChange={v=>setMesesAdelante(Number(v))} options={[{v:"3",l:"3 meses"},{v:"6",l:"6 meses"},{v:"12",l:"12 meses"}]}/>
+            <Selector label="Tipo de Tenida" value={tipo} onChange={setTipo} options={["Tenida de Instrucción","Tenida Ordinaria","Tenida de Iniciación","Tenida de Perfección","Tenida Solsticial","Tenida Blanca","Tenida Especial"]}/>
+            <Selector label="Grado" value={grado} onChange={setGrado} options={["Aprendiz","Compañero","Maestro","Todos"]}/>
+          </div>
+
+          <label style={{display:"flex",alignItems:"center",gap:10,marginBottom:20,cursor:"pointer"}}>
+            <input type="checkbox" checked={agape} onChange={e=>setAgape(e.target.checked)} style={{accentColor:T.acento,width:16,height:16}}/>
+            <span style={{fontSize:15,color:T.textoSec,fontWeight:600}}>Incluye Ágape en todas</span>
+          </label>
+
+          <div style={{background:T.acentoBg,border:`1px solid ${T.acentoBorde}`,borderRadius:8,padding:"10px 14px",marginBottom:16,fontSize:14,color:T.textoSec}}>
+            Se generarán <strong style={{color:T.texto}}>{generarFechas().length}</strong> tenidas nuevas (omitiendo fechas ya existentes).
+          </div>
+
+          <div style={{display:"flex",gap:10}}>
+            <Boton onClick={generar}>Generar Tenidas</Boton>
+            <Boton onClick={()=>setMostrar(false)} variante="fantasma">Cancelar</Boton>
+          </div>
+        </Tarjeta>
+      )}
+    </div>
+  );
+}
+
+function VMTenidas({ tenidas, setTenidas, dbOk, msg }) {
   const T = useT();
   const [editandoId, setEditandoId] = useState(null);
   const [mostrarNueva, setMostrarNueva] = useState(false);
@@ -1070,12 +1423,20 @@ function VMTenidas({ tenidas, setTenidas, msg }) {
   function agregar() {
     if(!formNueva.fecha) return;
     const id = Math.max(...tenidas.map(t=>t.id),0)+1;
-    setTenidas(p=>[...p,{...formNueva,id}].sort((a,b)=>a.fecha.localeCompare(b.fecha)));
+    if (dbOk) {
+      try {
+        const r = await DB.insertTenida(formNueva);
+        setTenidas(p=>[...p,r].sort((a,b)=>a.fecha.localeCompare(b.fecha)));
+        setFormNueva({fecha:"",hora:"19:00",tipo:"Tenida de Instrucción",grado:"Aprendiz",agape:true,descripcion:""});
+        setMostrarNueva(false); msg("✓ Tenida agregada"); return;
+      } catch(e) { console.error(e); }
+    }
+    setTenidas(p=>[...p,{...formNueva,id:Math.max(...tenidas.map(t=>t.id),0)+1}].sort((a,b)=>a.fecha.localeCompare(b.fecha)));
     setFormNueva({fecha:"",hora:"19:00",tipo:"Tenida de Instrucción",grado:"Aprendiz",agape:true,descripcion:""});
     setMostrarNueva(false); msg("✓ Tenida agregada");
   }
-  function eliminar(id){ setTenidas(p=>p.filter(t=>t.id!==id)); msg("Tenida eliminada"); }
-  function guardarEdicion(id, datos){ setTenidas(p=>p.map(t=>t.id===id?{...t,...datos}:t)); setEditandoId(null); msg("✓ Tenida actualizada"); }
+  async function eliminar(id){ setTenidas(p=>p.filter(t=>t.id!==id)); if(dbOk) DB.deleteTenida(id).catch(console.error); msg("Tenida eliminada"); }
+  async function guardarEdicion(id, datos){ setTenidas(p=>p.map(t=>t.id===id?{...t,...datos}:t)); if(dbOk) DB.updateTenida(id, datos).catch(console.error); setEditandoId(null); msg("✓ Tenida actualizada"); }
   function setFN(k,v){ setFormNueva(p=>({...p,[k]:v})); }
 
   return (
@@ -1101,6 +1462,8 @@ function VMTenidas({ tenidas, setTenidas, msg }) {
           <Boton onClick={agregar} chico>Agregar al Almanaque</Boton>
         </Tarjeta>
       )}
+      <GenerarTenidasMasivo tenidas={tenidas} setTenidas={setTenidas} msg={msg}/>
+
       {tenidas.sort((a,b)=>a.fecha.localeCompare(b.fecha)).map(ten => (
         editandoId===ten.id
           ? <EditarTenida key={ten.id} tenida={ten} onGuardar={d=>guardarEdicion(ten.id,d)} onCancelar={()=>setEditandoId(null)}/>
@@ -1159,7 +1522,7 @@ function VMPlanchas({ planchas, usuarios, eliminarPlancha }) {
         const gc = GC[g]||T.acento;
         return (
           <div key={g} style={{marginBottom:28}}>
-            <div style={{fontSize:13,fontWeight:700,letterSpacing:"0.2em",color:gc,textTransform:"uppercase",marginBottom:12}}>{GICON[g]} Planchas de {g}</div>
+            <div style={{fontSize:13,fontWeight:700,letterSpacing:"0.2em",color:gc,textTransform:"uppercase",marginBottom:12}}>{g==="Maestro"?"⬟":g==="Compañero"?"⬡":"○"} Planchas de {g}</div>
             {delGrado.map(p => {
               const autor = usuarios[p.autorKey];
               return (
