@@ -1,6 +1,6 @@
 // Supabase client — R.L. Pedro Benoit N. 636
-const URL = "https://alblbdtbyzcxjhiwisot.supabase.co/rest/v1";
-const KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFsYmxiZHRieXpjeGpoaXdpc290Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5OTExNzQsImV4cCI6MjA5MjU2NzE3NH0.TYSe5DZyBK2BmkmqxQUVeaCw6-aKyDjdGO8B2Wgw1Mg";
+const URL = "https://zifguuezeftsjjzsdojm.supabase.co/rest/v1";
+const KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InppZmd1dWV6ZWZ0c2pqenNkb2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4Nzc4OTgsImV4cCI6MjA5ODQ1Mzg5OH0.8MYJEU06DVjY9t-RD4QNI6gIJbiy5Zo4ArM38EbZRjY";
 const H = { "apikey": KEY, "Authorization": `Bearer ${KEY}`, "Content-Type": "application/json", "Prefer": "return=representation" };
 
 async function q(path, opts = {}) {
