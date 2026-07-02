@@ -232,7 +232,15 @@ function Tarjeta({ children, estilo }) {
 
 function Notif({ msg, cerrar }) {
   const T = useT();
-  useEffect(() => { const x = setTimeout(cerrar, 2800); return () => clearTimeout(x); }, []);
+  useEffect(() => { 
+    const guardado = localStorage.getItem("usuarioActual");
+
+    if (guardado) {
+        const usuario = JSON.parse(guardado);
+        setCu(usuario);
+        setPantalla("app");
+    }
+    const x = setTimeout(cerrar, 2800); return () => clearTimeout(x); }, []);
   return <div style={{position:"fixed",top:20,right:20,zIndex:9999,background:T.bgCard,border:`2px solid ${T.acento}`,color:T.acento,padding:"14px 24px",borderRadius:10,fontSize:16,fontWeight:700,fontFamily:FF,boxShadow:"0 8px 32px rgba(0,0,0,0.4)",animation:"pbFI 0.3s ease"}}>{msg}</div>;
 }
 
@@ -282,10 +290,10 @@ export default function App() {
   function ingresar() {
     const k = lu.trim().toLowerCase();
     const u = usuarios[k];
-    if (u && u.password === lp) { setCu({...u, key:k}); setPantalla("app"); setLerr(""); setTab("inicio"); }
+    if (u && u.password === lp) { setCu({...u, key:k}); localStorage.setItem("usuarioActual", JSON.stringify({...u, key:k})); setPantalla("app"); setLerr(""); setTab("inicio"); }
     else setLerr("Usuario o contraseña incorrectos.");
   }
-  function salir() { setPantalla("login"); setCu(null); setLu(""); setLp(""); }
+  function salir() { setPantalla("login"); setCu(null); setLu(""); setLp("") localStorage.removeItem("usuarioActual"); }
   function msg(m) { setNotif(m); }
 
   function toggleConf(tid, tipo) {
