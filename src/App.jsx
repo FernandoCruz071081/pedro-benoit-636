@@ -1,30 +1,31 @@
 import { useState, useEffect, createContext, useContext } from "react";
 import * as DB from "./supabase.js";
+import { LOGIA, PADRON_INIT as PADRON_CFG, TENIDAS_INIT as TENIDAS_CFG } from "./logia.config.js";
 
 // ─── USUARIOS ─────────────────────────────────────────────────────────────────
-const USERS_INIT = {
-  "vmbenoit636": { password:"636PBfer", grado:"Maestro", cargo:"Venerable Maestro", oficialidad:"Venerable Maestro", esVM:true, perfil:{ nombre:"Fernando", apellido:"Cruz", email:"cruzfernando0710@gmail.com", telefono:"11-3914-1232", celular:"15-3914-1232", direccion:"Alvarado 602", localidad:"Merlo", provincia:"Buenos Aires", fechaNacimiento:"", dni:"", profesion:"", estadoCivil:"", sangre:"", enfermedades:"", medicamentos:"", alergias:"", contactoEmergencia:"", telefonoEmergencia:"", relacionEmergencia:"", fechaIniciacion:"", numeroDeMiembro:"98.107" }},
-  "prueba": { password:"prueba", grado:"Aprendiz", cargo:"Hermano", oficialidad:"", esVM:false, perfil:{ nombre:"Usuario", apellido:"Prueba", email:"", telefono:"", celular:"", direccion:"", localidad:"Merlo", provincia:"Buenos Aires", fechaNacimiento:"", dni:"", profesion:"", estadoCivil:"", sangre:"", enfermedades:"", medicamentos:"", alergias:"", contactoEmergencia:"", telefonoEmergencia:"", relacionEmergencia:"", fechaIniciacion:"", numeroDeMiembro:"000.000" }},
-  "jvillegas": { password:"vill186", grado:"Maestro", cargo:"Primer Vigilante", oficialidad:"Primer Vigilante", esVM:false, perfil:{ nombre:"Jorge Oscar", apellido:"Villegas", email:"jorgevillegas@net-c.com", telefono:"4483-1426", celular:"15-5347-7947", direccion:"B. Irigoyen 7", localidad:"Castelar", provincia:"Buenos Aires", fechaNacimiento:"", dni:"", profesion:"", estadoCivil:"", sangre:"", enfermedades:"", medicamentos:"", alergias:"", contactoEmergencia:"", telefonoEmergencia:"", relacionEmergencia:"", fechaIniciacion:"", numeroDeMiembro:"97.186" }},
-  "caraujo": { password:"arau083", grado:"Maestro", cargo:"Segundo Vigilante", oficialidad:"Segundo Vigilante", esVM:false, perfil:{ nombre:"Celso Rubén", apellido:"Araujo", email:"celsofilo@gmail.com", telefono:"01167342223", celular:"1167342223", direccion:"Tonelero 726", localidad:"Mariano Acosta", provincia:"Buenos Aires", fechaNacimiento:"", dni:"", profesion:"", estadoCivil:"", sangre:"", enfermedades:"", medicamentos:"", alergias:"", contactoEmergencia:"", telefonoEmergencia:"", relacionEmergencia:"", fechaIniciacion:"", numeroDeMiembro:"105.083" }},
-  "mguerrero": { password:"guer752", grado:"Maestro", cargo:"Orador", oficialidad:"Orador", esVM:false, perfil:{ nombre:"Maximiliano Daniel", apellido:"Guerrero", email:"maxi_dgar@yahoo.com.ar", telefono:"02323-497-486", celular:"011-6324-0566", direccion:"Mariano Moreno 693 Dpto 7", localidad:"Luján", provincia:"Buenos Aires", fechaNacimiento:"", dni:"", profesion:"", estadoCivil:"", sangre:"", enfermedades:"", medicamentos:"", alergias:"", contactoEmergencia:"", telefonoEmergencia:"", relacionEmergencia:"", fechaIniciacion:"", numeroDeMiembro:"91.752" }},
-  "egonzalez": { password:"gonz935", grado:"Maestro", cargo:"Secretario", oficialidad:"Secretario", esVM:false, perfil:{ nombre:"Elbio Gustavo", apellido:"González", email:"ElbioGustavogonzalez@gmail.com", telefono:"", celular:"1169001577", direccion:"Juan Manuel de Rosas 1234", localidad:"Merlo", provincia:"Buenos Aires", fechaNacimiento:"", dni:"", profesion:"", estadoCivil:"", sangre:"", enfermedades:"", medicamentos:"", alergias:"", contactoEmergencia:"", telefonoEmergencia:"", relacionEmergencia:"", fechaIniciacion:"", numeroDeMiembro:"106.935" }},
-  "marias": { password:"aria980", grado:"Maestro", cargo:"Tesorero", oficialidad:"Tesorero", esVM:false, perfil:{ nombre:"Martín Alejandro", apellido:"Arias", email:"arias.martin.ale@gmail.com", telefono:"", celular:"1162757625", direccion:"Padilla 1468", localidad:"Libertad", provincia:"Buenos Aires", fechaNacimiento:"", dni:"", profesion:"", estadoCivil:"", sangre:"", enfermedades:"", medicamentos:"", alergias:"", contactoEmergencia:"", telefonoEmergencia:"", relacionEmergencia:"", fechaIniciacion:"", numeroDeMiembro:"104.980" }},
-  "mrobles": { password:"robl969", grado:"Maestro", cargo:"Hospitalario", oficialidad:"Hospitalario", esVM:false, perfil:{ nombre:"Martín", apellido:"Robles", email:"martin_robles@hotmail.com", telefono:"", celular:"1161058040", direccion:"Chacabuco 715", localidad:"Merlo", provincia:"Buenos Aires", fechaNacimiento:"", dni:"", profesion:"", estadoCivil:"", sangre:"", enfermedades:"", medicamentos:"", alergias:"", contactoEmergencia:"", telefonoEmergencia:"", relacionEmergencia:"", fechaIniciacion:"", numeroDeMiembro:"105.969" }},
-  "jaguado": { password:"agua419", grado:"Aprendiz", cargo:"Hermano", oficialidad:"", esVM:false, perfil:{ nombre:"Jeremías Ezequiel", apellido:"Aguado", email:"jeremiaseam@gmail.com", telefono:"", celular:"1122940366", direccion:"Av. Argentina 790 Piso 1 Depto. 1", localidad:"Merlo", provincia:"Buenos Aires", fechaNacimiento:"", dni:"", profesion:"", estadoCivil:"", sangre:"", enfermedades:"", medicamentos:"", alergias:"", contactoEmergencia:"", telefonoEmergencia:"", relacionEmergencia:"", fechaIniciacion:"", numeroDeMiembro:"107.419" }},
-  "fbonanati": { password:"bona506", grado:"Aprendiz", cargo:"Hermano", oficialidad:"", esVM:false, perfil:{ nombre:"Federico Roberto", apellido:"Bonanati Rodriguez Lima", email:"frrodriguezlima@gmail.com", telefono:"", celular:"1144949631", direccion:"Latzina 1391", localidad:"Ituzaingó", provincia:"Buenos Aires", fechaNacimiento:"", dni:"", profesion:"", estadoCivil:"", sangre:"", enfermedades:"", medicamentos:"", alergias:"", contactoEmergencia:"", telefonoEmergencia:"", relacionEmergencia:"", fechaIniciacion:"", numeroDeMiembro:"109.506" }},
-  "mchavez": { password:"chav390", grado:"Aprendiz", cargo:"Hermano", oficialidad:"", esVM:false, perfil:{ nombre:"Martín Antonio", apellido:"Chávez Duran", email:"marmcd12@gmail.com", telefono:"", celular:"1138765082", direccion:"Pedro Obligado 3851", localidad:"Gregorio de Laferrere", provincia:"Buenos Aires", fechaNacimiento:"", dni:"", profesion:"", estadoCivil:"", sangre:"", enfermedades:"", medicamentos:"", alergias:"", contactoEmergencia:"", telefonoEmergencia:"", relacionEmergencia:"", fechaIniciacion:"", numeroDeMiembro:"104.390" }},
-  "aclavero": { password:"clav321", grado:"Maestro", cargo:"Hermano", oficialidad:"", esVM:false, perfil:{ nombre:"Ángel Jorge", apellido:"Clavero", email:"claverogm@gmail.com", telefono:"4863-0823", celular:"1562203358", direccion:"Gallo 492 6° A", localidad:"CABA", provincia:"Buenos Aires", fechaNacimiento:"", dni:"", profesion:"", estadoCivil:"", sangre:"", enfermedades:"", medicamentos:"", alergias:"", contactoEmergencia:"", telefonoEmergencia:"", relacionEmergencia:"", fechaIniciacion:"", numeroDeMiembro:"13.321" }},
-  "wfernandez": { password:"fern566", grado:"Maestro", cargo:"Hermano", oficialidad:"", esVM:false, perfil:{ nombre:"Walter Ariel", apellido:"Fernandez", email:"warielf@hotmail.com", telefono:"", celular:"15-4176-3921", direccion:"Arzobispo Espinosa 1483 P3", localidad:"CABA", provincia:"Buenos Aires", fechaNacimiento:"", dni:"", profesion:"", estadoCivil:"", sangre:"", enfermedades:"", medicamentos:"", alergias:"", contactoEmergencia:"", telefonoEmergencia:"", relacionEmergencia:"", fechaIniciacion:"", numeroDeMiembro:"92.566" }},
-  "agorza": { password:"gorz590", grado:"Aprendiz", cargo:"Hermano", oficialidad:"", esVM:false, perfil:{ nombre:"Andrés Sebastián", apellido:"Gorza", email:"lic.andresgorza@gmail.com", telefono:"", celular:"1160127390", direccion:"Rodriguez Peña 1975", localidad:"Castelar", provincia:"Buenos Aires", fechaNacimiento:"", dni:"", profesion:"", estadoCivil:"", sangre:"", enfermedades:"", medicamentos:"", alergias:"", contactoEmergencia:"", telefonoEmergencia:"", relacionEmergencia:"", fechaIniciacion:"", numeroDeMiembro:"111.590" }},
-  "cheffler": { password:"heff239", grado:"Compañero", cargo:"Hermano", oficialidad:"", esVM:false, perfil:{ nombre:"Cristian Jesús", apellido:"Heffler", email:"cristianheffler85@gmail.com", telefono:"1126532593", celular:"1126532593", direccion:"Haedo 56", localidad:"Moreno", provincia:"Buenos Aires", fechaNacimiento:"", dni:"", profesion:"", estadoCivil:"", sangre:"", enfermedades:"", medicamentos:"", alergias:"", contactoEmergencia:"", telefonoEmergencia:"", relacionEmergencia:"", fechaIniciacion:"", numeroDeMiembro:"109.239" }},
-  "flarranaga": { password:"larr026", grado:"Maestro", cargo:"Hermano", oficialidad:"", esVM:false, perfil:{ nombre:"Fernando", apellido:"Larrañaga", email:"ingflarranaga@hotmail.com", telefono:"", celular:"1168724185", direccion:"Bruno Maffi 280", localidad:"General Las Heras", provincia:"Buenos Aires", fechaNacimiento:"", dni:"", profesion:"", estadoCivil:"", sangre:"", enfermedades:"", medicamentos:"", alergias:"", contactoEmergencia:"", telefonoEmergencia:"", relacionEmergencia:"", fechaIniciacion:"", numeroDeMiembro:"20.026" }},
-  "gpaz": { password:"paz_829", grado:"Aprendiz", cargo:"Hermano", oficialidad:"", esVM:false, perfil:{ nombre:"Gastón Armando", apellido:"Paz", email:"PAZGASTON2011@GMAIL.COM", telefono:"", celular:"1158456922", direccion:"Catamarca 1018", localidad:"Marcos Paz", provincia:"Buenos Aires", fechaNacimiento:"", dni:"", profesion:"", estadoCivil:"", sangre:"", enfermedades:"", medicamentos:"", alergias:"", contactoEmergencia:"", telefonoEmergencia:"", relacionEmergencia:"", fechaIniciacion:"", numeroDeMiembro:"110.829" }},
-  "fpereiro": { password:"pere197", grado:"Aprendiz", cargo:"Hermano", oficialidad:"", esVM:false, perfil:{ nombre:"Francisco Nicolás", apellido:"Pereiro", email:"nicolaspereiro1@gmail.com", telefono:"", celular:"1130005329", direccion:"Iwanoski 1143", localidad:"Merlo", provincia:"Buenos Aires", fechaNacimiento:"", dni:"", profesion:"", estadoCivil:"", sangre:"", enfermedades:"", medicamentos:"", alergias:"", contactoEmergencia:"", telefonoEmergencia:"", relacionEmergencia:"", fechaIniciacion:"", numeroDeMiembro:"112.197" }},
-  "jrestrepo": { password:"rest403", grado:"Aprendiz", cargo:"Hermano", oficialidad:"", esVM:false, perfil:{ nombre:"Jhony Alejandro", apellido:"Restrepo Muriel", email:"jhonyrmja@gmail.com", telefono:"", celular:"1151408540", direccion:"Marcos Paz Garcia 172", localidad:"Marcos Paz", provincia:"Buenos Aires", fechaNacimiento:"", dni:"", profesion:"", estadoCivil:"", sangre:"", enfermedades:"", medicamentos:"", alergias:"", contactoEmergencia:"", telefonoEmergencia:"", relacionEmergencia:"", fechaIniciacion:"", numeroDeMiembro:"112.403" }},
-  "jrico": { password:"rico544", grado:"Maestro", cargo:"Hermano", oficialidad:"", esVM:false, perfil:{ nombre:"Jorge Omar", apellido:"Rico", email:"ajorico@hotmail.com", telefono:"0237-4625-451", celular:"011-3325-4934", direccion:"Dr. Balbi 168", localidad:"Moreno", provincia:"Buenos Aires", fechaNacimiento:"", dni:"", profesion:"", estadoCivil:"", sangre:"", enfermedades:"", medicamentos:"", alergias:"", contactoEmergencia:"", telefonoEmergencia:"", relacionEmergencia:"", fechaIniciacion:"", numeroDeMiembro:"91.544" }},
-  "vzucco": { password:"zucc153", grado:"Maestro", cargo:"Hermano", oficialidad:"", esVM:false, perfil:{ nombre:"Vicente", apellido:"Zucco", email:"vicentezucco@hotmail.com", telefono:"02323-15-554884", celular:"02323-15-554884", direccion:"Italia 2395", localidad:"Luján", provincia:"Buenos Aires", fechaNacimiento:"", dni:"", profesion:"", estadoCivil:"", sangre:"", enfermedades:"", medicamentos:"", alergias:"", contactoEmergencia:"", telefonoEmergencia:"", relacionEmergencia:"", fechaIniciacion:"", numeroDeMiembro:"99.153" }},
-};
+const USERS_INIT = Object.fromEntries(
+  Object.entries(PADRON_CFG).map(([k,v]) => [k, {
+    password: v.password,
+    grado: v.grado,
+    cargo: v.cargo,
+    oficialidad: v.oficialidad || "",
+    esVM: v.esVM || false,
+    perfil: {
+      nombre: v.nombre || "",
+      apellido: v.apellido || "",
+      email: v.email || "",
+      telefono: "",
+      celular: v.celular || "",
+      direccion: v.direccion || "",
+      localidad: v.localidad || "",
+      provincia: LOGIA.provincia || "",
+      fechaNacimiento: "", dni: "", profesion: "", estadoCivil: "",
+      sangre: "", enfermedades: "", medicamentos: "", alergias: "",
+      contactoEmergencia: "", telefonoEmergencia: "", relacionEmergencia: "",
+      fechaIniciacion: "", numeroDeMiembro: v.numeroDeMiembro || ""
+    }
+  }])
+)
 const PLANCHAS_INIT = [
   { id:1, autorKey:"vmbenoit636", titulo:"La Geometría Sagrada y el Compás", grado:"Maestro", fecha:"2024-05-10", contenido:"La geometría sagrada constituye el lenguaje universal con el que el Gran Arquitecto del Universo diseñó la creación.\n\nEl compás, herramienta del Maestro, traza los límites del conocimiento y la virtud. La geometría no es un mero recurso técnico sino el vehículo por el cual el espíritu se eleva hacia la comprensión de los principios eternos." },
   { id:2, autorKey:"jvillegas", titulo:"El Simbolismo de la Escuadra", grado:"Maestro", fecha:"2024-09-15", contenido:"La escuadra es el emblema del Primer Vigilante y el símbolo rector de la justicia y la rectitud. Cada ángulo recto que trazamos en piedra bruta es un compromiso con la verdad.\n\nSu ángulo de noventa grados no admite aproximaciones: o se es recto, o no se es." },
@@ -32,19 +33,7 @@ const PLANCHAS_INIT = [
   { id:4, autorKey:"jaguado", titulo:"El Umbral: Reflexión sobre la Iniciación", grado:"Aprendiz", fecha:"2025-08-05", contenido:"Al cruzar el umbral del Templo por primera vez, el profano muere simbólicamente para renacer como Aprendiz. El silencio y la oscuridad del gabinete de reflexión nos preparan para recibir la luz." },
 ];
 
-const TENIDAS_INIT = [
-  { id:1, fecha:"2026-07-10", hora:"19:00", tipo:"Tenida de Instrucción", grado:"Aprendiz", agape:true, descripcion:"Segundo viernes de Julio." },
-  { id:2, fecha:"2026-07-24", hora:"19:00", tipo:"Tenida de Instrucción", grado:"Aprendiz", agape:true, descripcion:"Cuarto viernes de Julio." },
-  { id:3, fecha:"2026-08-14", hora:"19:00", tipo:"Tenida de Instrucción", grado:"Aprendiz", agape:true, descripcion:"Segundo viernes de Agosto." },
-  { id:4, fecha:"2026-08-28", hora:"19:00", tipo:"Tenida de Instrucción", grado:"Aprendiz", agape:true, descripcion:"Cuarto viernes de Agosto." },
-  { id:5, fecha:"2026-09-11", hora:"19:00", tipo:"Tenida de Instrucción", grado:"Aprendiz", agape:true, descripcion:"Segundo viernes de Septiembre." },
-  { id:6, fecha:"2026-09-25", hora:"19:00", tipo:"Tenida de Instrucción", grado:"Aprendiz", agape:true, descripcion:"Cuarto viernes de Septiembre." },
-  { id:7, fecha:"2026-10-09", hora:"19:00", tipo:"Tenida de Instrucción", grado:"Aprendiz", agape:true, descripcion:"Segundo viernes de Octubre." },
-  { id:8, fecha:"2026-10-23", hora:"19:00", tipo:"Tenida de Instrucción", grado:"Aprendiz", agape:true, descripcion:"Cuarto viernes de Octubre." },
-  { id:9, fecha:"2026-11-13", hora:"19:00", tipo:"Tenida de Instrucción", grado:"Aprendiz", agape:true, descripcion:"Segundo viernes de Noviembre." },
-  { id:10, fecha:"2026-11-27", hora:"19:00", tipo:"Tenida de Instrucción", grado:"Aprendiz", agape:true, descripcion:"Cuarto viernes de Noviembre." },
-  { id:11, fecha:"2026-12-11", hora:"19:00", tipo:"Tenida de Instrucción", grado:"Aprendiz", agape:true, descripcion:"Segundo viernes de Diciembre." },
-];
+const TENIDAS_INIT = TENIDAS_CFG.map((t,i) => ({...t, id: i+1}))
 const COMUNICADOS_INIT = [
   { id:1, fecha:"10 Abr 2026", autorKey:"vmbenoit636", titulo:"Convocatoria Tenida — Abril 2026", cuerpo:"Se convoca a todos los HH∴ en pleno ejercicio de sus derechos a la Tenida del corriente mes. La puntualidad es signo de virtud masónica." },
   { id:2, fecha:"5 Abr 2026", autorKey:"egonzalez", titulo:"Actualización de Plancha de Quites", cuerpo:"Se solicita a todos los HH∴ que completen sus datos de perfil en el sistema antes del 15 del corriente, incluyendo datos médicos y contactos de emergencia." },
@@ -52,7 +41,7 @@ const COMUNICADOS_INIT = [
 ];
 
 const ACTAS_INIT = [
-  { id:1, fecha:"17 Abr 2026", tenidaDesc:"Tenida de Instrucción — 17 de Abril 2026", autorKey:"egonzalez", texto:"En la ciudad de Merlo, siendo las 19:15 horas del 17 de Abril de 2026, y reunidos en el Oriente de la Resp∴ Log∴ Pedro Benoit N∴ 636, el Ven∴ Maes∴ Fernando Cruz declaró abiertos los trabajos en grado de Aprendiz.\n\nSe procedió a la lectura del Acta de la tenida anterior, la cual fue aprobada por unanimidad. El Sec∴ Elbio González informó sobre las comunicaciones recibidas de la Gran Logia.\n\nSe realizó instrucción masónica sobre el simbolismo de la columna del Norte. El H∴ Gastón Paz presentó una breve reflexión sobre los principios fundamentales del grado de Aprendiz.\n\nNo habiendo más asuntos que tratar, el Ven∴ Maes∴ declaró cerrados los trabajos a las 21:30 horas, procediéndose al Ágape fraternal." },
+  { id:1, fecha:"17 Abr 2026", tenidaDesc:"Tenida de Instrucción — 17 de Abril 2026", autorKey:"egonzalez", visibilidad:"todos", texto:"En la ciudad de Merlo, siendo las 19:15 horas del 17 de Abril de 2026, y reunidos en el Oriente de la Resp∴ Log∴ {`${LOGIA.nombre} N∴ ${LOGIA.numero}`}, el Ven∴ Maes∴ Fernando Cruz declaró abiertos los trabajos en grado de Aprendiz.\n\nSe procedió a la lectura del Acta de la tenida anterior, la cual fue aprobada por unanimidad. El Sec∴ Elbio González informó sobre las comunicaciones recibidas de la Gran Logia.\n\nSe realizó instrucción masónica sobre el simbolismo de la columna del Norte. El H∴ Gastón Paz presentó una breve reflexión sobre los principios fundamentales del grado de Aprendiz.\n\nNo habiendo más asuntos que tratar, el Ven∴ Maes∴ declaró cerrados los trabajos a las 21:30 horas, procediéndose al Ágape fraternal." },
 ];
 
 const OFICIALIDADES = ["","Venerable Maestro","Primer Vigilante","Segundo Vigilante","Orador","Secretario","Tesorero","Limosnero","Maestro de Ceremonias","Primer Experto","Segundo Experto","Primer Diácono","Segundo Diácono","Hospitalario","Porta Espada","Porta Estandarte","Guardián Exterior","Guardián Interior","Hermano"];
@@ -98,7 +87,8 @@ function puedeComun(u) {
   if (!u) return false;
   if (u.esVM) return true;
   const o = (u.oficialidad || u.cargo || "").toLowerCase();
-  return o.includes("secretario") || o.includes("tesorero") || o.includes("hospitalario");
+  return o.includes("secretario") || o.includes("tesorero") || o.includes("hospitalario")
+    || o.includes("orador") || o.includes("vigilante");
 }
 function nomCompleto(u) {
   const p = u?.perfil || {};
@@ -232,15 +222,7 @@ function Tarjeta({ children, estilo }) {
 
 function Notif({ msg, cerrar }) {
   const T = useT();
-  useEffect(() => { 
-    const guardado = localStorage.getItem("usuarioActual");
-
-    if (guardado) {
-        const usuario = JSON.parse(guardado);
-        setCu(usuario);
-        setPantalla("app");
-    }
-    const x = setTimeout(cerrar, 2800); return () => clearTimeout(x); }, []);
+  useEffect(() => { const x = setTimeout(cerrar, 2800); return () => clearTimeout(x); }, []);
   return <div style={{position:"fixed",top:20,right:20,zIndex:9999,background:T.bgCard,border:`2px solid ${T.acento}`,color:T.acento,padding:"14px 24px",borderRadius:10,fontSize:16,fontWeight:700,fontFamily:FF,boxShadow:"0 8px 32px rgba(0,0,0,0.4)",animation:"pbFI 0.3s ease"}}>{msg}</div>;
 }
 
@@ -290,10 +272,10 @@ export default function App() {
   function ingresar() {
     const k = lu.trim().toLowerCase();
     const u = usuarios[k];
-    if (u && u.password === lp) { setCu({...u, key:k}); localStorage.setItem("usuarioActual", JSON.stringify({...u, key:k})); setPantalla("app"); setLerr(""); setTab("inicio"); }
+    if (u && u.password === lp) { setCu({...u, key:k}); setPantalla("app"); setLerr(""); setTab("inicio"); }
     else setLerr("Usuario o contraseña incorrectos.");
   }
-  function salir() { setPantalla("login"); setCu(null); setLu(""); setLp("") localStorage.removeItem("usuarioActual"); }
+  function salir() { setPantalla("login"); setCu(null); setLu(""); setLp(""); }
   function msg(m) { setNotif(m); }
 
   function toggleConf(tid, tipo) {
@@ -413,7 +395,7 @@ export default function App() {
           <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:16,background:T.bg}}>
             <div style={{fontSize:38,color:T.acento}}>✦</div>
             <div style={{fontSize:16,color:T.textoSec,fontWeight:600,fontFamily:"'Segoe UI',Arial,sans-serif"}}>Cargando datos del Oriente...</div>
-            <div style={{fontSize:13,color:T.textoFaint,fontFamily:"'Segoe UI',Arial,sans-serif"}}>R∴L∴ Pedro Benoit N∴ 636 · Merlo</div>
+            <div style={{fontSize:13,color:T.textoFaint,fontFamily:"'Segoe UI',Arial,sans-serif"}}>{`R∴L∴ ${LOGIA.nombre} N∴ ${LOGIA.numero}`} · Merlo</div>
           </div>
         )}
         {!cargando && pantalla==="login" && (
@@ -423,7 +405,7 @@ export default function App() {
               <div style={{fontSize:14,fontWeight:700,letterSpacing:"0.35em",color:T.acento,textTransform:"uppercase",marginTop:18,marginBottom:8}}>Resp∴ Log∴</div>
               <h1 style={{fontSize:32,fontWeight:800,color:T.texto,margin:"0 0 4px"}}>R∴L∴ Pedro Benoit</h1>
               <div style={{fontSize:20,color:T.acento,fontWeight:700,letterSpacing:"0.2em"}}>N∴ 636</div>
-              <div style={{fontSize:15,color:T.textoSec,marginTop:6}}>Merlo · Buenos Aires</div>
+              <div style={{fontSize:15,color:T.textoSec,marginTop:6}}>{`${LOGIA.localidad} · ${LOGIA.provincia}`}</div>
               <div style={{width:80,height:3,background:T.acento,margin:"16px auto 0",borderRadius:2}}/>
             </div>
             <div style={{background:T.bgCard,border:`2px solid ${T.borderFuerte}`,borderRadius:16,padding:"40px 44px",width:"100%",maxWidth:420,boxShadow:oscuro?"0 20px 60px rgba(0,0,0,0.5)":"0 8px 40px rgba(22,85,168,0.12)"}}>
@@ -464,7 +446,7 @@ export default function App() {
                 <EyeIcon size={30}/>
                 <div>
                   <div style={{fontSize:17,fontWeight:800,color:T.texto}}>R∴L∴ Pedro Benoit</div>
-                  <div style={{fontSize:13,color:T.acento,fontWeight:600}}>N∴ 636 · Merlo, Buenos Aires</div>
+                  <div style={{fontSize:13,color:T.acento,fontWeight:600}}>N∴ 636 · {`${LOGIA.localidad}, ${LOGIA.provincia}`}</div>
                 </div>
               </div>
               <div style={{display:"flex",alignItems:"center",gap:14}}>
@@ -484,7 +466,7 @@ export default function App() {
             </div>
 
             <div style={{maxWidth:920,margin:"0 auto",padding:"32px 24px 64px"}}>
-              {tab==="inicio" && <TabCalendario tenidas={tenidas} confs={confs} toggleConf={toggleConf} miConf={miConf} actas={actas} cu={cu} onAgregarActa={agregarActa} onEliminarActa={eliminarActa}/>}
+              {tab==="inicio" && <TabCalendario tenidas={tenidas} confs={confs} toggleConf={toggleConf} miConf={miConf} actas={actas} cu={cu} onAgregarActa={agregarActa} onEliminarActa={eliminarActa} usuarios={usuarios}/>}
               {tab==="tenidas" && <TabTenidas tenidas={tenidas} confs={confs} toggleConf={toggleConf} miConf={miConf}/>}
               {tab==="planchas" && <TabPlanchas planchas={planchas} usuarios={usuarios} cu={cu} onAgregar={agregarPlancha} onEliminar={eliminarPlancha} esVM={esVM}/>}
               {tab==="hermanos" && <TabHermanos usuarios={usuarios} cu={cu}/>}
@@ -501,7 +483,7 @@ export default function App() {
 }
 
 // ─── CALENDARIO ───────────────────────────────────────────────────────────────
-function TabCalendario({ tenidas, confs, toggleConf, miConf, actas, cu, onAgregarActa, onEliminarActa }) {
+function TabCalendario({ tenidas, confs, toggleConf, miConf, actas, cu, onAgregarActa, onEliminarActa, usuarios }) {
   const T = useT();
   const hoy = new Date();
   const [anio, setAnio] = useState(hoy.getFullYear());
@@ -521,9 +503,57 @@ function TabCalendario({ tenidas, confs, toggleConf, miConf, actas, cu, onAgrega
   function anteriorMes(){ if(mes===0){setMes(11);setAnio(a=>a-1);}else setMes(m=>m-1); }
   function siguienteMes(){ if(mes===11){setMes(0);setAnio(a=>a+1);}else setMes(m=>m+1); }
 
+  // Cumpleaños: hoy y próximos 30 días
+  const cumpleHoy = [];
+  const cumpleProx = [];
+  Object.values(usuarios||{}).forEach(u => {
+    const fn = u.perfil?.fechaNacimiento;
+    if (!fn) return;
+    const d = new Date(fn+"T12:00:00");
+    if (isNaN(d)) return;
+    const esteAnio = new Date(hoy.getFullYear(), d.getMonth(), d.getDate());
+    const diff = Math.round((esteAnio - hoy) / (1000*60*60*24));
+    const nombre = nomCompleto(u);
+    if (diff === 0) cumpleHoy.push(nombre);
+    else if (diff > 0 && diff <= 30) cumpleProx.push({ nombre, diff, fecha: esteAnio });
+  });
+  cumpleProx.sort((a,b) => a.diff - b.diff);
+
   return (
     <div>
       <SecTitulo>Almanaque del Oriente</SecTitulo>
+
+      {/* Cumpleaños de hoy */}
+      {cumpleHoy.length > 0 && (
+        <div style={{background:`linear-gradient(135deg, ${T.acentoBg}, ${T.bgCard})`,border:`2px solid ${T.acento}`,borderRadius:14,padding:"18px 24px",marginBottom:20,display:"flex",alignItems:"flex-start",gap:16}}>
+          <div style={{fontSize:36,lineHeight:1}}>🎂</div>
+          <div>
+            <div style={{fontSize:13,fontWeight:700,color:T.acento,textTransform:"uppercase",letterSpacing:"0.18em",marginBottom:6}}>¡Hoy es su día!</div>
+            {cumpleHoy.map((n,i) => (
+              <div key={i} style={{fontSize:17,fontWeight:700,color:T.texto,marginBottom:4}}>
+                La Logia saluda fraternalmente al H∴ <span style={{color:T.acento}}>{n}</span> en su cumpleaños. ¡Que la luz del G∴A∴D∴U∴ lo guíe siempre!
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Próximos cumpleaños */}
+      {cumpleProx.length > 0 && (
+        <div style={{background:T.bgCard,border:`1.5px solid ${T.border}`,borderRadius:12,padding:"16px 20px",marginBottom:20}}>
+          <div style={{fontSize:13,fontWeight:700,color:T.textoSec,textTransform:"uppercase",letterSpacing:"0.15em",marginBottom:12}}>🎂 Próximos Cumpleaños</div>
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            {cumpleProx.slice(0,5).map((c,i) => (
+              <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 0",borderBottom:i<Math.min(cumpleProx.length,5)-1?`1px solid ${T.border}`:"none"}}>
+                <span style={{fontSize:15,fontWeight:600,color:T.texto}}>H∴ {c.nombre}</span>
+                <span style={{fontSize:13,fontWeight:700,color:c.diff<=7?T.acento:T.textoSec,background:c.diff<=7?T.acentoBg:"transparent",padding:"3px 10px",borderRadius:20,border:c.diff<=7?`1.5px solid ${T.acentoBorde}`:"none"}}>
+                  {c.diff === 1 ? "Mañana" : `en ${c.diff} días`} · {c.fecha.toLocaleDateString("es-AR",{day:"numeric",month:"long"})}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {proxima && (
         <div style={{background:T.acentoBg,border:`2px solid ${T.acentoBorde}`,borderRadius:14,padding:"22px 28px",marginBottom:28}}>
@@ -604,11 +634,11 @@ function TabCalendario({ tenidas, confs, toggleConf, miConf, actas, cu, onAgrega
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:10}}>
           <SecTitulo>Acta de la Tenida Anterior</SecTitulo>
           {cu && (cu.esVM || (cu.oficialidad||"").toLowerCase().includes("secretario")) && (
-            <ActaForm cu={cu} onAgregar={onAgregarActa}/>
+            <ActaForm cu={cu} tenidas={tenidas} onAgregar={onAgregarActa}/>
           )}
         </div>
         {actas && actas.length > 0 ? actas.slice(0,1).map(acta => (
-          <ActaCard key={acta.id} acta={acta} puedeEliminar={cu && (cu.esVM||(cu.oficialidad||"").toLowerCase().includes("secretario"))} onEliminar={onEliminarActa}/>
+          <ActaCard key={acta.id} acta={acta} cu={cu} confs={confs} puedeEliminar={cu && (cu.esVM||(cu.oficialidad||"").toLowerCase().includes("secretario"))} onEliminar={onEliminarActa}/>
         )) : (
           <Tarjeta estilo={{textAlign:"center",color:"var(--ts, #89afd4)",fontSize:15,padding:"32px"}}>No hay actas publicadas aún.</Tarjeta>
         )}
@@ -616,7 +646,7 @@ function TabCalendario({ tenidas, confs, toggleConf, miConf, actas, cu, onAgrega
           <details style={{marginTop:10}}>
             <summary style={{cursor:"pointer",fontSize:14,fontWeight:600,color:"#4da6ff",padding:"8px 0",userSelect:"none"}}>Ver actas anteriores ({actas.length-1} más)</summary>
             {actas.slice(1).map(acta => (
-              <ActaCard key={acta.id} acta={acta} puedeEliminar={cu && (cu.esVM||(cu.oficialidad||"").toLowerCase().includes("secretario"))} onEliminar={onEliminarActa}/>
+              <ActaCard key={acta.id} acta={acta} cu={cu} confs={confs} puedeEliminar={cu && (cu.esVM||(cu.oficialidad||"").toLowerCase().includes("secretario"))} onEliminar={onEliminarActa}/>
             ))}
           </details>
         )}
@@ -626,16 +656,53 @@ function TabCalendario({ tenidas, confs, toggleConf, miConf, actas, cu, onAgrega
 }
 
 // ─── TENIDAS ──────────────────────────────────────────────────────────────────
-function ActaCard({ acta, puedeEliminar, onEliminar }) {
+function ActaCard({ acta, puedeEliminar, onEliminar, cu, confs }) {
   const T = useT();
   const [expandido, setExpandido] = useState(false);
+
+  // Verificar si el usuario puede leer esta acta
+  const esVM = cu?.esVM;
+  const esOficial = ["secretario","tesorero","hospitalario","orador","vigilante"].some(r =>
+    (cu?.oficialidad||cu?.cargo||"").toLowerCase().includes(r)
+  );
+
+  let puedeVer = true;
+  const vis = acta.visibilidad || "todos";
+
+  if (!esVM && !esOficial) {
+    if (vis === "asistentes") {
+      // Solo pueden leer quienes confirmaron asistencia a esa tenida
+      // Buscamos la tenida por descripción o id referenciado
+      const asistio = acta.tenidaId
+        ? (confs[acta.tenidaId]?.[cu?.key]?.asistencia === true)
+        : false;
+      puedeVer = asistio;
+    } else if (vis === "maestros") {
+      puedeVer = cu?.grado === "Maestro";
+    } else if (vis === "oficiales") {
+      puedeVer = esOficial || esVM;
+    }
+    // "todos" = puedeVer = true (default)
+  }
+
   const preview = acta.texto.length > 300 ? acta.texto.slice(0,300) + "..." : acta.texto;
+
+  const VIS_LABEL = {
+    "todos": null,
+    "asistentes": "🔒 Solo asistentes a esta tenida",
+    "maestros": "🔒 Solo Maestros",
+    "oficiales": "🔒 Solo Oficialidad",
+  };
+
   return (
-    <Tarjeta estilo={{marginBottom:12,borderLeft:`4px solid ${T.textoSec}`}}>
+    <Tarjeta estilo={{marginBottom:12, borderLeft:`4px solid ${puedeVer ? T.textoSec : T.peligro}`}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10,flexWrap:"wrap",gap:8}}>
         <div>
           <div style={{fontSize:16,fontWeight:700,color:T.texto,marginBottom:3}}>{acta.tenidaDesc}</div>
           <div style={{fontSize:13,color:T.textoSec,fontWeight:500}}>{acta.fecha}</div>
+          {VIS_LABEL[vis] && (
+            <div style={{fontSize:12,color:T.acento,fontWeight:600,marginTop:4}}>{VIS_LABEL[vis]}</div>
+          )}
         </div>
         {puedeEliminar && (
           <button onClick={()=>onEliminar(acta.id)}
@@ -646,29 +713,64 @@ function ActaCard({ acta, puedeEliminar, onEliminar }) {
           </button>
         )}
       </div>
-      <p style={{fontSize:15,color:T.textoSec,lineHeight:1.8,whiteSpace:"pre-wrap"}}>
-        {expandido ? acta.texto : preview}
-      </p>
-      {acta.texto.length > 300 && (
-        <button onClick={()=>setExpandido(!expandido)}
-          style={{background:"none",border:"none",color:T.acento,cursor:"pointer",fontFamily:FF,fontSize:14,fontWeight:600,marginTop:8,padding:0}}>
-          {expandido ? "Mostrar menos ↑" : "Leer acta completa ↓"}
-        </button>
+
+      {puedeVer ? (
+        <>
+          <p style={{fontSize:15,color:T.textoSec,lineHeight:1.8,whiteSpace:"pre-wrap"}}>
+            {expandido ? acta.texto : preview}
+          </p>
+          {acta.texto.length > 300 && (
+            <button onClick={()=>setExpandido(!expandido)}
+              style={{background:"none",border:"none",color:T.acento,cursor:"pointer",fontFamily:FF,fontSize:14,fontWeight:600,marginTop:8,padding:0}}>
+              {expandido ? "Mostrar menos ↑" : "Leer acta completa ↓"}
+            </button>
+          )}
+        </>
+      ) : (
+        <div style={{background:T.peligroBg,border:`1.5px solid ${T.peligroBorde}`,borderRadius:8,padding:"14px 16px",fontSize:14,color:T.peligro,fontWeight:600}}>
+          🔒 No tenés acceso a esta acta.
+          {vis==="asistentes" && " El Venerable Maestro la configuró como visible solo para quienes asistieron a la tenida."}
+          {vis==="maestros" && " Esta acta es exclusiva para Maestros."}
+          {vis==="oficiales" && " Esta acta es exclusiva para la Oficialidad."}
+        </div>
       )}
     </Tarjeta>
   );
 }
 
-function ActaForm({ cu, onAgregar }) {
+function ActaForm({ cu, tenidas, onAgregar }) {
   const T = useT();
   const [mostrar, setMostrar] = useState(false);
+  const [tenidaId, setTenidaId] = useState("");
   const [tenidaDesc, setTenidaDesc] = useState("");
   const [texto, setTexto] = useState("");
+  const [visibilidad, setVisibilidad] = useState("todos");
+
+  // Tenidas pasadas (para vincular el acta a una tenida real)
+  const hoy = new Date();
+  const pasadas = tenidas
+    .filter(t => new Date(t.fecha+"T12:00:00") < hoy)
+    .sort((a,b) => b.fecha.localeCompare(a.fecha));
+
+  function selTenida(id) {
+    setTenidaId(id);
+    const t = tenidas.find(x => String(x.id) === String(id));
+    if (t) setTenidaDesc(`${t.tipo} — ${fLargo(t.fecha)}`);
+  }
+
   function publicar() {
     if(!tenidaDesc.trim()||!texto.trim()) return;
-    onAgregar({tenidaDesc, texto, autorKey:cu.key});
-    setTenidaDesc(""); setTexto(""); setMostrar(false);
+    onAgregar({ tenidaDesc, tenidaId: tenidaId || null, texto, autorKey:cu.key, visibilidad });
+    setTenidaId(""); setTenidaDesc(""); setTexto(""); setVisibilidad("todos"); setMostrar(false);
   }
+
+  const VIS = [
+    {v:"todos",      l:"Todos los hermanos"},
+    {v:"asistentes", l:"Solo quienes confirmaron asistencia a esa tenida"},
+    {v:"maestros",   l:"Solo Maestros"},
+    {v:"oficiales",  l:"Solo la Oficialidad"},
+  ];
+
   return (
     <div>
       <Boton onClick={()=>setMostrar(!mostrar)} variante={mostrar?"fantasma":"primario"} chico>
@@ -677,7 +779,43 @@ function ActaForm({ cu, onAgregar }) {
       {mostrar && (
         <Tarjeta estilo={{marginTop:14,marginBottom:4,border:`2px solid ${T.acentoBorde}`}}>
           <div style={{fontSize:15,fontWeight:700,color:T.acento,textTransform:"uppercase",letterSpacing:"0.15em",marginBottom:14}}>Nueva Acta</div>
-          <Campo label="Descripción de la Tenida" value={tenidaDesc} onChange={setTenidaDesc} placeholder="Ej: Tenida de Instrucción — 17 de Abril 2026"/>
+
+          {/* Selector de tenida */}
+          <label style={{display:"block",marginBottom:14}}>
+            <div style={{fontSize:14,fontWeight:600,color:T.textoSec,marginBottom:6}}>Tenida a la que corresponde esta acta</div>
+            <select value={tenidaId} onChange={e=>selTenida(e.target.value)}
+              style={{width:"100%",padding:"11px 13px",background:T.bgInput,border:`2px solid ${T.border}`,borderRadius:8,color:T.texto,fontSize:14,fontFamily:FF,outline:"none"}}
+              onFocus={e=>e.target.style.borderColor=T.acento} onBlur={e=>e.target.style.borderColor=T.border}>
+              <option value="">— Seleccionar tenida —</option>
+              {pasadas.map(t=>(
+                <option key={t.id} value={t.id}>{t.tipo} — {fLargo(t.fecha)}</option>
+              ))}
+              <option value="otra">Otra / Ingreso manual</option>
+            </select>
+          </label>
+
+          {/* Descripción manual si no seleccionó o eligió "otra" */}
+          {(tenidaId === "otra" || !tenidaId) && (
+            <Campo label="Descripción de la Tenida" value={tenidaDesc} onChange={setTenidaDesc} placeholder="Ej: Tenida de Instrucción — 10 de Julio 2026"/>
+          )}
+
+          {/* Visibilidad */}
+          <div style={{marginBottom:16}}>
+            <div style={{fontSize:14,fontWeight:600,color:T.textoSec,marginBottom:8}}>¿Quién puede leer esta acta?</div>
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              {VIS.map(op=>(
+                <label key={op.v} onClick={()=>setVisibilidad(op.v)} style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer",padding:"10px 14px",borderRadius:8,border:`2px solid ${visibilidad===op.v?T.acento:T.border}`,background:visibilidad===op.v?T.acentoBg:"transparent",transition:"all 0.18s"}}>
+                  <input type="radio" name="vis" value={op.v} checked={visibilidad===op.v} onChange={()=>setVisibilidad(op.v)} style={{accentColor:T.acento,width:16,height:16}}/>
+                  <span style={{fontSize:14,fontWeight:visibilidad===op.v?700:500,color:visibilidad===op.v?T.acento:T.textoSec}}>{op.l}</span>
+                  {op.v==="asistentes" && !tenidaId && visibilidad==="asistentes" && (
+                    <span style={{fontSize:12,color:T.peligro,fontWeight:600}}>← Seleccioná la tenida arriba</span>
+                  )}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Texto del acta */}
           <label style={{display:"block",marginBottom:16}}>
             <div style={{fontSize:14,fontWeight:600,color:T.textoSec,marginBottom:6}}>Texto del Acta</div>
             <textarea value={texto} onChange={e=>setTexto(e.target.value)} rows={10}
@@ -685,6 +823,7 @@ function ActaForm({ cu, onAgregar }) {
               style={{width:"100%",padding:"12px 14px",background:T.bgInput,border:`2px solid ${T.border}`,borderRadius:8,color:T.texto,fontSize:15,fontFamily:FF,outline:"none",resize:"vertical",lineHeight:1.8,boxSizing:"border-box"}}
               onFocus={e=>e.target.style.borderColor=T.acento} onBlur={e=>e.target.style.borderColor=T.border}/>
           </label>
+
           <div style={{display:"flex",gap:10}}>
             <Boton onClick={publicar}>Publicar Acta</Boton>
             <Boton onClick={()=>setMostrar(false)} variante="fantasma">Cancelar</Boton>
@@ -1002,7 +1141,7 @@ function TabPerfil({ datosUser, onGuardar }) {
           </Tarjeta>
           <Tarjeta estilo={{marginBottom:14}}>
             <div style={{fontSize:14,fontWeight:700,color:T.textoSec,textTransform:"uppercase",letterSpacing:"0.15em",marginBottom:14}}>Masónico (solo lectura)</div>
-            <FilaDato label="Grado · Cargo" value={`${datosUser.grado} · ${datosUser.cargo}`}/><FilaDato label="Leg. N°" value={form.numeroDeMiembro}/><FilaDato label="Logia" value="R∴L∴ Pedro Benoit N∴ 636 · Merlo"/>
+            <FilaDato label="Grado · Cargo" value={`${datosUser.grado} · ${datosUser.cargo}`}/><FilaDato label="Leg. N°" value={form.numeroDeMiembro}/><FilaDato label="Logia" value="{`R∴L∴ ${LOGIA.nombre} N∴ ${LOGIA.numero}`} · Merlo"/>
           </Tarjeta>
           <div style={{background:T.peligroBg,border:`1.5px solid ${T.peligroBorde}`,borderRadius:12,padding:"22px 26px"}}>
             <div style={{fontSize:14,fontWeight:700,color:T.peligro,textTransform:"uppercase",letterSpacing:"0.15em",marginBottom:14}}>🔒 Datos Médicos</div>
@@ -1098,7 +1237,7 @@ function TabVM({ tenidas, setTenidas, dbOk, usuarios, confs, planchas, msg, actu
         <div style={{fontSize:22,color:T.acento,fontWeight:800}}>✦</div>
         <div>
           <div style={{fontSize:20,fontWeight:800,color:T.texto}}>Panel Administrativo — Venerable Maestro</div>
-          <div style={{fontSize:14,color:T.textoSec,fontWeight:500}}>R∴L∴ Pedro Benoit N∴ 636 · Merlo</div>
+          <div style={{fontSize:14,color:T.textoSec,fontWeight:500}}>{`R∴L∴ ${LOGIA.nombre} N∴ ${LOGIA.numero}`} · Merlo</div>
         </div>
       </div>
       <div style={{display:"flex",borderBottom:`2px solid ${T.border}`,marginBottom:26,overflowX:"auto"}}>
